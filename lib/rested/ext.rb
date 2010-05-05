@@ -58,9 +58,7 @@ class Class
       unless options[:instance_reader] == false
         class_eval(<<-EOS, __FILE__, __LINE__ + 1)
           def #{sym}
-              puts "reading instance opt #{sym} = " + @#{sym}
             return @#{sym} if @#{sym}
-            puts "returning from class instead"
             self.class.#{sym}
           end
         EOS
@@ -84,7 +82,6 @@ class Class
       unless options[:instance_writer] == false
         class_eval(<<-EOS, __FILE__, __LINE__ + 1)
           def #{sym}=(obj)
-              puts "setting instance opt to " + obj
             @#{sym} = obj
           end
         EOS
