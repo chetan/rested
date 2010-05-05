@@ -13,12 +13,12 @@ module Rested
 			if self.user and self.pass then
 				@client.set_auth(self.base_url, self.user, self.pass)
 			end
-			@client.debug_dev = STDOUT
+			@client.debug_dev = STDOUT if Rested.debug
 			@client
 		end
 
 		def client
-			return @client if not @client.nil?
+			return @client if @client
 			@client = setup_client()
 		end
 	
