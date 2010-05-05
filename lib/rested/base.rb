@@ -58,8 +58,7 @@ module Rested
             elsif ct =~ /xml/ then
                 decode_xml_response(message)
             else
-                p ct
-                puts message.content
+                Rested.log_in { "\n" + message.content }
                 raise "Unknown response type"
             end
         end
