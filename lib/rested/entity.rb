@@ -61,6 +61,19 @@ module Rested
 
 		end
 		
+		def files
+			@files ||= {}
+		end
+		
+		def add_file(name, file)
+			if file.kind_of? String then
+				raise IOError.new("File not found: #{file}") if not File.exists? file
+				file = File.new(file)
+			end
+			return if not file.kind_of? File
+			self.files[name] = file
+		end
+		
 		def initialize(*args)
 			if args.kind_of? Hash then
 				h = args
@@ -117,7 +130,10 @@ module Rested
 			uri += "/#{self.id_val}" if not new?
 			params = to_h() if not params
 			params.delete(self.id_field) if new?
-            # params.delete_if { |k,v| v.nil? }
+			if not self.files.empty? then
+				params.merge!(self.files)
+				@files = {}
+			end
 			ret = self.post(uri, params)
 			if new? then
 				self.id_val = self.class.new(ret.values.first).id_val
