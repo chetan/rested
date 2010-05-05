@@ -35,6 +35,23 @@ Documentation is available online at at rdoc.info[http://rdoc.info/projects/chet
   # to upload a file
   moe.add_file("param_name", "/path/to/file")
   moe.save!
+  
+  # non-entity based example
+  
+  class Baz < Rested::Base
+    base_url    "http://api.example.com/methods/"
+    user        "user@example.com"
+    pass        "foobar"
+
+    def self.search(terms)
+      params = {}
+      params["terms"] = terms
+      ret = post("/search", params)
+      ret["search_results"]
+    end
+
+  end
+  
 
 == REQUIREMENTS:
 
