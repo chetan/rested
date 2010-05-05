@@ -14,27 +14,27 @@ Documentation is available online at at rdoc.info[http://rdoc.info/projects/chet
 
 == SYNOPSIS:
 
-	class Foo < Rested::Entity
-	    base_url    "http://api.example.com/entities/"
-	    endpoint    "foo"
-	    user        "user@example.com"
-	    pass        "foobar"
-	
-	    field 		:id, :baz, :bar
-	end
-	
-	foo = Foo.find(1)
-	foo.baz = "frobnicator"
-	foo.save!
-	
-	moe = Foo.new
-	moe.bar = "curly"
-	moe.save!
-	puts "new id is #{moe.id}"
-	
-	# to upload a file
-	moe.add_file("param_name", "/path/to/file")
-	moe.save!
+  class Foo < Rested::Entity
+    base_url    "http://api.example.com/entities/"
+    endpoint    "foo"
+    user        "user@example.com"
+    pass        "foobar"
+
+    field     :id, :baz, :bar
+  end
+  
+  foo = Foo.find(1)
+  foo.baz = "frobnicator"
+  foo.save!
+  
+  moe = Foo.new
+  moe.bar = "curly"
+  moe.save!
+  puts "new id is #{moe.id}"
+  
+  # to upload a file
+  moe.add_file("param_name", "/path/to/file")
+  moe.save!
 
 == REQUIREMENTS:
 
