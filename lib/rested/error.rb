@@ -2,15 +2,16 @@
 module Rested
     
     class Error < ::Exception
-        
-        attr_accessor :status, :reason, :http_response, :message
-        
+
+        attr_accessor :status, :reason, :http_response, :message, :validations
+
         def initialize(res)
 
             hash = Rested::Base.decode_response(res)
             if hash.include? "error" then
                 self.message = hash["error"]
             end
+            self.validations = Validations.new(hash['validations'])
             self.status = res.status
             self.reason = res.reason
             self.http_response = res
@@ -20,7 +21,7 @@ module Rested
         def to_s
             "#{self.status} #{self.reason}" + (self.message.nil? ? "" : ": #{self.message}")
         end
-        
+
         # def self.handle(res)
         #   case res.status
         #       when 400

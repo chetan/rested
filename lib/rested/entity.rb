@@ -7,6 +7,7 @@ module Rested
     class Entity < Base
 
         rattr_accessor :endpoint, :id_field
+        attr_accessor :errors
         Entity.id_field(:id)
         
         class << self
@@ -31,10 +32,14 @@ module Rested
             def field(*args)
                 args.each do |f|
                     if not fields.include? f then
-                        self.fields << f
-                        attr_accessor f
+                      add_field(f)
                     end
                 end
+            end
+
+            def add_field(field)
+              self.fields << field
+              attr_accessor field
             end
 
             def find(id = nil)
@@ -43,7 +48,7 @@ module Rested
                 begin
                     json = get(uri)
                 rescue Rested::Error => ex
-                    if ex.message =~ /Invalid Object/ then
+                    if ex.message =~ /Invalid/ then
                         raise ObjectNotFound.new(ex.http_response)
                     end
                 end
@@ -91,6 +96,7 @@ module Rested
                     end
                 end
             end                 
+            self.errors = []
         end
         
         def id_val
@@ -108,6 +114,23 @@ module Rested
         def new?
             self.id_val.nil?
         end
+
+        def [](name)
+          begin
+            send(name)
+          rescue NoMethodError
+            nil
+          end
+        end
+
+        def []=(name, value)
+          begin
+            send("#{name}=", value)
+          rescue NoMethodError
+            self.class.add_field(name)
+            send("#{name}=", value)
+          end
+        end
         
         def to_h
             h = {}
@@ -123,6 +146,16 @@ module Rested
         
         def to_s
             to_json()
+        end
+
+        # TODO: Should set return an error hash with specific fields and messages instead of just the generic error message
+        def save
+          begin
+            save!
+          rescue Rested::Error => e
+            self.errors = e.validations
+            false
+          end
         end
         
         def save!(params = nil)
