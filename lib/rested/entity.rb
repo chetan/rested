@@ -167,7 +167,8 @@ module Rested
     def to_h
       h = {}
       fields.each do |f|
-        h[f] = delimited_fields.include?(f) ? self.send(f).join(delimited_fields[f]) : self.send(f)
+        val = self.send(f)
+        h[f] = val && delimited_fields.include?(f) ? val.join(delimited_fields[f]) : val
       end
       h
     end
