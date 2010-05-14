@@ -1,186 +1,236 @@
-
 require File.dirname(__FILE__) + '/ext'
 require File.dirname(__FILE__) + '/base'
 
 module Rested
+  
+  class Entity < Base
+
+    rattr_accessor :endpoint, :id_field
+    attr_accessor :errors
+    Entity.id_field(:id)
     
-    class Entity < Base
+    class << self
 
-        rattr_accessor :endpoint, :id_field
-        attr_accessor :errors
-        Entity.id_field(:id)
-        
-        class << self
-            
-            def id_field
-               @id_field ||= inherit_static_from_super(:id_field) || nil
-            end
-            
-            def inherit_static_from_super(sym)
-                if superclass.respond_to? sym then
-                    val = superclass.send(sym)
-                    return val if val.kind_of? Symbol
-                    return val.dup if not val.nil?
-                end
-                return nil
-            end
-            
-            def fields
-                @fields ||= inherit_static_from_super(:fields) || []
-            end
-            
-            def field(*args)
-                args.each do |f|
-                    if not fields.include? f then
-                      add_field(f)
-                    end
-                end
-            end
+      attr_reader :before_filters, :after_filters
 
-            def add_field(field)
-              self.fields << field
-              attr_accessor field
-            end
+      def before_filters
+        @before_filters ||= []
+      end
 
-            def find(id = nil)
-                uri = self.endpoint
-                uri += "/#{id}" if not id.nil?
-                begin
-                    json = get(uri)
-                rescue Rested::Error => ex
-                    if ex.message =~ /Invalid/ then
-                        raise ObjectNotFound.new(ex.http_response)
-                    end
-                end
-                if id.nil? then
-                    # return as list
-                    return json.values.first.map { |j| new(j) }
-                end
-                return nil if json.values.empty?
-                return new(json.values.first)
-            end
+      def after_filters
+        @after_filters ||= []
+      end
 
-            def list
-                find()
-            end
+      def before_save(&block)
+        before_filters << block
+      end
 
+      def after_save(&block)
+        after_filters << block
+      end
+      
+      def id_field
+        @id_field ||= inherit_static_from_super(:id_field) || nil
+      end
+      
+      def inherit_static_from_super(sym)
+        if superclass.respond_to? sym then
+          val = superclass.send(sym)
+          return val if val.kind_of? Symbol
+          return val.dup if not val.nil?
         end
-        
-        def files
-            @files ||= {}
-        end
-        
-        def add_file(name, file)
-            if file.kind_of? String then
-                raise IOError.new("File not found: #{file}") if not File.exists? file
-                file = File.new(file)
-            end
-            return if not file.kind_of? File
-            self.files[name] = file
-        end
-        
-        def initialize(*args)
-            if args.kind_of? Hash then
-                h = args
-            elsif args.kind_of? Array and args.first.kind_of? Hash then
-                h = args.first
-            end
-            if not h.nil? then
-                h.each_pair do |name, value|
-                    writer_method = "#{name}="
-                    if respond_to?(writer_method)
-                        send(writer_method, value)
-                    else
-                        puts "setting #{name} = #{value}"
-                        self[name.to_s] = value
-                    end
-                end
-            end                 
-            self.errors = []
-        end
-        
-        def id_val
-            self.send(id_field)
-        end
-        
-        def id_val=(val)
-            self.send("#{id_field.to_s}=", val)
-        end
-        
-        def new_record?
-            self.new?
-        end
+        return nil
+      end
+      
+      def fields
+        @fields ||= inherit_static_from_super(:fields) || []
+      end
 
-        def new?
-            self.id_val.nil?
+      def field(*args)
+        args.each do |f|
+          add_field(f) unless fields.include? f 
         end
+      end
 
-        def [](name)
-          begin
-            send(name)
-          rescue NoMethodError
-            nil
+      def delimited_fields
+        @delimited_fields ||= {}
+      end
+
+      def delimited_field(field, delimiter = ',')
+        unless fields.include? field
+          delimited_fields[field] = delimiter
+          add_field(field)
+        end
+      end
+
+      def add_field(field)
+        self.fields << field
+        attr_accessor field
+      end
+
+      def find(id = nil)
+        uri = self.endpoint
+        uri += "/#{id}" if not id.nil?
+        begin
+          json = get(uri)
+        rescue Rested::Error => ex
+          if ex.message =~ /Invalid/ then
+            raise ObjectNotFound.new(ex.http_response)
           end
         end
+        if id.nil? then
+          # return as list
+          return json.values.first.map { |j| new(j) }
+        end
+        return nil if json.values.empty?
+        return new(json.values.first)
+      end
 
-        def []=(name, value)
-          begin
-            send("#{name}=", value)
-          rescue NoMethodError
-            self.class.add_field(name)
-            send("#{name}=", value)
-          end
-        end
-        
-        def to_h
-            h = {}
-            self.class.fields.each do |f|
-                h[f] = self.send(f)
-            end
-            h
-        end
-        
-        def to_json
-            JSON.generate(to_h())
-        end
-        
-        def to_s
-            to_json()
-        end
-
-        # TODO: Should set return an error hash with specific fields and messages instead of just the generic error message
-        def save
-          begin
-            save!
-          rescue Rested::Error => e
-            self.errors = e.validations
-            false
-          end
-        end
-        
-        def save!(params = nil)
-            uri = self.endpoint
-            uri += "/#{self.id_val}" if not new?
-            params = to_h() if not params
-            params.delete(self.id_field) if new?
-            if not self.files.empty? then
-                params.merge!(self.files)
-                @files = {}
-            end
-            ret = self.post(uri, params)
-            if new? then
-                self.id_val = self.class.new(ret.values.first).id_val
-            end
-            true
-        end
-        
-        def delete!
-            return if new?
-            uri = self.endpoint + "/#{self.id_val}"
-            self.delete(uri)
-            true
-        end
+      def list
+        find()
+      end
 
     end
     
+    def files
+      @files ||= {}
+    end
+    
+    def add_file(name, file)
+      if file.kind_of? String then
+        raise IOError.new("File not found: #{file}") if not File.exists? file
+        file = File.new(file)
+      elsif file.is_a? Tempfile
+        file = File.new(file.path)
+      end
+      return if not file.kind_of? File
+      self.files[name] = file
+    end
+    
+    def initialize(*args)
+      if args.kind_of? Hash then
+        h = args
+      elsif args.kind_of? Array and args.first.kind_of? Hash then
+        h = args.first
+      end
+      if h
+        h.each_pair do |name, value|
+          writer_method = "#{name}="
+          if delimited_fields.include?(name.to_sym)
+            value = value.split(delimited_fields[name.to_sym]) if value
+            value = value.map(&:to_i) if value.is_a?(String) && value.all?{ |v| v.to_i.to_s == v }
+          end
+          if respond_to?(writer_method)
+            send(writer_method, value)
+          else
+            puts "setting #{name} = #{value}"
+            self[name.to_s] = value
+          end
+        end
+      end         
+      self.errors = []
+    end
+    
+    def id_val
+      self.send(id_field)
+    end
+    
+    def id_val=(val)
+      self.send("#{id_field.to_s}=", val)
+    end
+    
+    def new_record?
+      self.new?
+    end
+
+    def new?
+      self.id_val.nil?
+    end
+
+    def [](name)
+      begin
+        send(name)
+      rescue NoMethodError
+        nil
+      end
+    end
+
+    def []=(name, value)
+      begin
+        send("#{name}=", value)
+      rescue NoMethodError
+        self.class.add_field(name)
+        send("#{name}=", value)
+      end
+    end
+    
+    def to_h
+      h = {}
+      fields.each do |f|
+        h[f] = delimited_fields.include?(f) ? self.send(f).join(delimited_fields[f]) : self.send(f)
+      end
+      h
+    end
+    
+    def to_json
+      JSON.generate(to_h())
+    end
+    
+    def to_s
+      to_json()
+    end
+
+    def update_attributes(attributes = {})
+      attributes.each_pair do |field, value|
+        send("#{field}=", value)
+      end
+      save
+    end
+
+    def save
+      begin
+        save!
+      rescue Rested::Error => e
+        self.errors = e.validations
+        false
+      end
+    end
+    
+    def save!(params = nil)
+      self.class.before_filters.each do |f| 
+        f.call(self) 
+      end 
+      uri = self.endpoint
+      uri += "/#{self.id_val}" unless new?
+      params = to_h() if not params
+      params.delete(self.id_field) if new?
+      unless self.files.empty?
+        params.merge!(self.files)
+        @files = {}
+      end
+      ret = self.post(uri, params)
+      if new? then
+        self.id_val = self.class.new(ret.values.first).id_val
+      end
+      self.class.after_filters.each do |f| 
+        f.call(self) 
+      end 
+      true
+    end
+    
+    def delete!
+      return if new?
+      uri = self.endpoint + "/#{self.id_val}"
+      self.delete(uri)
+      true
+    end
+
+    def fields
+      @fields ||= self.class.fields
+    end
+
+    def delimited_fields
+      @delimited_fields ||= self.class.delimited_fields
+    end
+  end
 end

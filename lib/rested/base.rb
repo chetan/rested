@@ -18,8 +18,7 @@ module Rested
         end
 
         def client
-            return @client if @client
-            @client = setup_client()
+            @client ||= setup_client()
         end
     
         def get(uri, params = nil)
