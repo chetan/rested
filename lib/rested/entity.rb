@@ -113,22 +113,32 @@ module Rested
       elsif args.kind_of? Array and args.first.kind_of? Hash then
         h = args.first
       end
-      if h
-        h.each_pair do |name, value|
-          writer_method = "#{name}="
-          if delimited_fields.include?(name.to_sym)
-            value = value.split(delimited_fields[name.to_sym]) if value
-            value = value.map(&:to_i) if value.is_a?(String) && value.all?{ |v| v.to_i.to_s == v }
-          end
-          if respond_to?(writer_method)
-            send(writer_method, value)
-          else
-            puts "setting #{name} = #{value}"
-            self[name.to_s] = value
-          end
-        end
-      end         
+      set_values(h) if h
       self.errors = []
+    end
+
+    def set_values(h)
+      h.each_pair do |name, value|
+        writer_method = "#{name}="
+        value = parse_value(name, value)
+        if respond_to?(writer_method)
+          send(writer_method, value)
+        else
+          self[name.to_s] = value
+        end
+      end
+    end
+
+    def parse_value(name, value)
+      if value
+        if delimited_fields.include?(name.to_sym)
+          value = value.split(delimited_fields[name.to_sym]) if value.is_a?(String)
+          value = value.map(&:to_i) if value.first.is_a?(String) && value.all?{ |v| v.to_i.to_s == v }
+        else
+          value = value.to_i if value.is_a?(String) && value.to_i.to_s == value
+        end
+        value
+      end
     end
     
     def id_val
