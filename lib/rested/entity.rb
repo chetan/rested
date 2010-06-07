@@ -68,11 +68,11 @@ module Rested
         attr_accessor field
       end
 
-      def find(id = nil)
+      def find(id = nil, masquerade = nil)
         uri = self.endpoint
         uri += "/#{id}" if not id.nil?
         begin
-          json = get(uri)
+          json = get(uri, :masquerade => masquerade)
         rescue Rested::Error => ex
           if ex.message =~ /Invalid/ then
             raise ObjectNotFound.new(ex.http_response)
