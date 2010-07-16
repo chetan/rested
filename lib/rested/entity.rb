@@ -130,7 +130,7 @@ module Rested
     end
 
     def parse_value(name, value)
-      if value
+      if !value.nil?
         if delimited_fields.include?(name.to_sym)
           value = value.split(delimited_fields[name.to_sym]) if value.is_a?(String)
           value = value.map(&:to_i) if value.first.is_a?(String) && value.all?{ |v| v.to_i.to_s == v }
