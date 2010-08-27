@@ -20,9 +20,15 @@ module Rested
         if block_given? then
             s = yield
             return if not s.kind_of? String
-            @debug.puts(s)
-        elsif not msg.nil? then
+            msg = s
+        end
+        return if msg.nil?
+        if @debug.respond_to? :puts then
             @debug.puts(msg)
+        elsif @debug.respond_to? :debug then
+            @debug.debug(msg)
+        else
+            puts "[Rested.debug] #{msg}"
         end
     end
     
