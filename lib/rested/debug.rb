@@ -4,7 +4,7 @@ module Rested
     
     def self.debug(val=nil)
         return @debug unless val
-        if val == true then
+        if val == true || val == 1 || val.nil? then
             @debug = STDOUT
         else
             @debug = val
