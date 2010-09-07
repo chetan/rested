@@ -211,15 +211,27 @@ module Rested
       self.class.before_filters.each do |f| 
         f.call(self) 
       end 
+      
       uri = self.endpoint
       uri += "/#{self.id_val}" unless new?
+      
       params = to_h() if not params
       params.delete(self.id_field) if new?
-      unless self.files.empty?
+      
+      if not self.files.empty?
         params.merge!(self.files)
         @files = {}
       end
-      ret = self.post(uri, params)
+      params = preserve_filenames(params)
+      
+      begin      
+        ret = self.post(uri, params)
+        cleanup_temp_files(params)
+      rescue => ex
+        cleanup_temp_files(params)
+        raise ex
+      end
+      
       if new? then
         self.id_val = self.class.new(ret.values.first).id_val
       end
@@ -243,5 +255,32 @@ module Rested
     def delimited_fields
       @delimited_fields ||= self.class.delimited_fields
     end
+    
+    
+    
+    private
+    
+    # simple trick to force httpclient to pass the real filename
+    # we simply rename our temp file to its original in a unique directory
+    def preserve_filenames(params)
+      params.each { |k,v|
+        if v.kind_of? Tempfile and v.respond_to? "original_filename" then
+          FileUtils.mkdir_p(v.path + "-origfile")
+          FileUtils.mv(v.path, v.path + "-origfile/" + v.original_filename)
+          params[k] = File.new(v.path + "-origfile/" + v.original_filename)
+        end
+      }
+      params
+    end
+    
+    # cleanup temp files created above
+    def cleanup_temp_files(params)
+      params.each { |k,v|
+        if v.kind_of? File
+          FileUtils.rm_rf([v.path, File.dirname(v.path)])
+        end
+      }
+    end
+    
   end
 end
