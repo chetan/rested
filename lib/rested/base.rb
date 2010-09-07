@@ -13,7 +13,9 @@ module Rested
             if self.user and self.pass then
                 @client.set_auth(self.base_url, self.user, self.pass)
             end
-            @client.debug_dev = STDOUT if Rested.debug
+            if not Rested.debug.nil?
+                @client.debug_dev = (Rested.debug.respond_to?("<<") ? Rested.debug : STDOUT)
+            end
             @client
         end
 
