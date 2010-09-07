@@ -16,6 +16,13 @@ module Rested
             if not Rested.debug.nil?
                 @client.debug_dev = (Rested.debug.respond_to?("<<") ? Rested.debug : STDOUT)
             end
+            if Object.const_defined? "Rack" then
+                handler = lambda { |path|
+                    path =~ /(\..*?)$/
+                    Rack::Mime.mime_type($1)
+                }
+                HTTP::Message.mime_type_handler = handler
+            end
             @client
         end
 
