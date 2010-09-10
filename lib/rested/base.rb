@@ -19,7 +19,7 @@ module Rested
             if Object.const_defined? "Rack" then
                 handler = lambda { |path|
                     path =~ /(\..*?)$/
-                    Rack::Mime.mime_type($1)
+                    Rack::Mime.mime_type(($1.nil? ? nil : $1.downcase))
                 }
                 HTTP::Message.mime_type_handler = handler
             end
