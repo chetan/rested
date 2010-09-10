@@ -100,10 +100,8 @@ module Rested
       if file.kind_of? String then
         raise IOError.new("File not found: #{file}") if not File.exists? file
         file = File.new(file)
-      elsif file.is_a? Tempfile
-        file = File.new(file.path)
       end
-      return if not file.kind_of? File
+      return if not (file.respond_to?(:read) and file.respond_to?(:pos) and file.respond_to?(:pos=))
       self.files[name] = file
     end
     
