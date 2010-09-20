@@ -275,7 +275,9 @@ module Rested
     def cleanup_temp_files(params)
       params.each { |k,v|
         if v.kind_of? File
-          FileUtils.rm_rf([v.path, File.dirname(v.path)])
+          FileUtils.rm_rf(v.path)
+          d = File.dirname(v.path)
+          FileUtils.rm_rf(d) if d =~ /-origfile$/
         end
       }
     end
