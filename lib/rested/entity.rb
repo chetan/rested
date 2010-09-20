@@ -259,12 +259,12 @@ module Rested
     private
     
     # simple trick to force httpclient to pass the real filename
-    # we simply rename our temp file to its original in a unique directory
+    # we simply copy our temp file to its original in a unique directory
     def preserve_filenames(params)
       params.each { |k,v|
         if v.kind_of? Tempfile and v.respond_to? "original_filename" then
           FileUtils.mkdir_p(v.path + "-origfile")
-          FileUtils.mv(v.path, v.path + "-origfile/" + v.original_filename)
+          FileUtils.cp(v.path, v.path + "-origfile/" + v.original_filename)
           params[k] = File.new(v.path + "-origfile/" + v.original_filename)
         end
       }
