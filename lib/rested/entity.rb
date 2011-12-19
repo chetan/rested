@@ -104,7 +104,7 @@ module Rested
       end
       Rested.log_out('Checking File Valdity')
       return if not (file.respond_to?(:read) and file.respond_to?(:pos) and file.respond_to?(:pos=))
-      Rested.log_out{'File Added')
+      Rested.log_out('File Added')
       self.files[name] = file
     end
     
