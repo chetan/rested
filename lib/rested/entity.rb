@@ -97,11 +97,14 @@ module Rested
     end
     
     def add_file(name, file)
+      Rested.log_out{'Adding File')
       if file.kind_of? String then
         raise IOError.new("File not found: #{file}") if not File.exists? file
         file = File.new(file)
       end
+      Rested.log_out{'Checking File Valdity')
       return if not (file.respond_to?(:read) and file.respond_to?(:pos) and file.respond_to?(:pos=))
+      Rested.log_out{'File Added')
       self.files[name] = file
     end
     
