@@ -5,7 +5,7 @@
 
 Gem::Specification.new do |s|
   s.name = %q{rested}
-  s.version = "0.3.7"
+  s.version = "0.3.8"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Chetan Sarva"]
@@ -26,7 +26,8 @@ Gem::Specification.new do |s|
      "lib/rested/entity.rb",
      "lib/rested/error.rb",
      "lib/rested/ext.rb",
-     "lib/rested/validations.rb"
+     "lib/rested/validations.rb",
+     "rested.gemspec"
   ]
   s.homepage = %q{}
   s.rdoc_options = ["--charset=UTF-8"]
