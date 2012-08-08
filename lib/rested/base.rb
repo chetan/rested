@@ -11,7 +11,8 @@ module Rested
         def setup_client
             @client = ::HTTPClient.new
             if self.user and self.pass then
-                @client.set_auth(self.base_url, self.user, self.pass)
+                @client.set_auth(nil, self.user, self.pass)
+                @client.www_auth.basic_auth.challenge(self.base_url)
             end
             if not Rested.debug.nil?
                 @client.debug_dev = (Rested.debug.respond_to?("<<") ? Rested.debug : STDOUT)
